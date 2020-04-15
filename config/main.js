@@ -5,7 +5,8 @@ var express = require('express'),
 	logger = require('morgan'),
 	flash = require('express-flash'),
 	expressValidator = require('express-validator'),
-	cors = require('cors');
+	cors = require('cors'),
+	MongoDBStore = require('connect-mongodb-session')(expressSession);
 var artificialDelay = 0;
 
 // configure app settings
@@ -18,6 +19,18 @@ module.exports = function(app, ini) {
 		});
 	}
 
+	// Create MongoDB Store for storing sessions
+	var store = new MongoDBStore({
+		uri: 'mongodb://bad.host:27000/connect_mongodb_session_test?connectTimeoutMS=10',
+		databaseName: 'connect_mongodb_session_test',
+		collection: 'mySessions'
+	});
+
+	// Catch errors
+	store.on('error', function(error) {
+		console.log(error);
+	});
+
 	// must use cookieParser before express Session
 	app.use(cookieParser());
 	app.use(expressSession({
@@ -25,6 +38,7 @@ module.exports = function(app, ini) {
 		cookie: {
 			maxAge: parseInt(ini.security.max_age)
 		},
+		store: store,
 		resave: true,
 		saveUninitialized: true
 	}));
